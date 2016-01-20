@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        head, body{
+            width:100%;
+            height:100%;
+            overflow: hidden;
+            top:0;
+            left:0;
+            margin:0;
+            padding:0;
+        }
+
+        #log{
+            position: absolute;
+            background-color: rgba( 255,255,255, .5);
+            top:0;
+            width:auto;
+            height:auto;
+            font-family: Verdana, Arial;
+            font-size: 11px;
+            padding: 1em;
+        }
+    </style>
+</head>
+<body>
+<script src="vendor/hammer.min.js"></script>
+<script src="graph/Vertex.js"></script>
+<script src="graph/Edge.js"></script>
+<script src="graph/Graph.js"></script>
+<script src="graph/utils.js"></script>
+
+<canvas id="canvas"></canvas>
+<div id="log"></div>
+
+<script src="PRNG.js"></script>
+<script>
+
+
+    var ctx = document.getElementById("canvas").getContext('2d');
+    var w = ctx.canvas.width = window.innerWidth;
+    var h = ctx.canvas.height = window.innerHeight;
+
+    var g, r, t, computing = false;
+
+    var log = document.getElementById("log");
+    var computeDijkstra = 0;
+    var computeFlawed = 0;
+    PRNG.initialize_generator(0);
+    function reset( positions, indices ){
+        var vertices = [];
+        var edges = [];
+
+        for( var i = 0; i < 5000; i++ ){
+            vertices.push( new Vertex( {x:-50+PRNG.random() * ( w + 100 ), y:-50 + PRNG.random() * ( h+100) } ) );
+        }
+
+        g = new Graph( vertices, edges );
+        utils.triangulate( g );
+
+        console.log( "vertices", g.vertices.length, "edges", g.edges.length );
+
+        var ham = new Hammer( ctx.canvas );
+        ham.on('doubletap', onClick );
+        ham.on('pan', test );
+
+        initRoot();
+    }
+
+    //exact dijkstra
+    function dijkstra( ctx, g, r, t ){
+
+        var path = utils.dijkstra.getShortestPath(t);
+        ctx.beginPath();
+        path.forEach( function( p ){ctx.lineTo(p.x, p.y);});
+        ctx.stroke();
+        return path;
+
+    }
+
+    //flawed Dijkstra
+    function flawed( ctx, g, r, t ){
+
+        var path = utils.flawedDijkstra.getShortestPath(t);
+        ctx.beginPath();
+        path.forEach( function( p ){ctx.lineTo(p.x, p.y);});
+        ctx.stroke();
+        return path;
+    }
+
+    //a* path finding
+    function astar( ctx, g, r, t ){
+
+        var path = utils.astar.search( g, r, t  );
+        ctx.beginPath();
+        path.forEach( function( p ){ ctx.lineTo(p.x, p.y); });
+        ctx.stroke();
+        return path;
+    }
+
+    function onClick(e)
+    {
+        if( computing )return;
+        computing = true;
+        ctx.fillStyle = "rgba(255,0,0,.5)";
+        ctx.fillRect(0,0,w,h);
+        setTimeout( initRoot, 20, e);
+    }
+
+    function initRoot(e){
+
+        if( r != null )
+        {
+            t = r;
+        }else{
+            t = g.vertices[parseInt( Math.random() * g.vertices.length )];
+        }
+
+        if( e != null ) {
+            r = getClosest(e.center, g );
+        }else{
+            r = g.vertices[parseInt( Math.random() * g.vertices.length )];
+        }
+
+        while( r==t ) t = g.vertices[parseInt( Math.random() * g.vertices.length )];
+
+        console.log( "--------" );
+        console.log( "compute :" );
+        var T = Date.now();
+        utils.dijkstra.init( g, r );
+        console.log( "Dijkstra time:", computeDijkstra = ( Date.now() - T ), "ms" );
+
+        T = Date.now();
+        utils.flawedDijkstra.init( g, r );
+        console.log( "Flawed Dijkstra time:", computeFlawed = ( Date.now() - T ), "ms" );
+        console.log( "--------" );
+
+        computing = false;
+        test();
+    }
+
+    function test( e ){
+
+        ctx.clearRect( 0,0,w,h );
+        ctx.strokeStyle ="#AAA";
+        utils.renderEdges(g, ctx,.5);
+
+        if( e != null ) t = getClosest(e.center, g );
+
+        var output = "";
+        output += "double click / tap to set the root node";
+        output += "<br>press drag to compute shortest path to root";
+        output += "<br> -------- ";
+        output += "<p style='color:blue'>Dijkstra compute time :" + computeDijkstra + " ms</p>";
+        output += "<p style='color:red'>Flawed Dijkstra compute time :" + computeFlawed + " ms</p>";
+        output += "<br> -------- ";
+
+        var a, b, c, T;
+
+        ctx.strokeStyle = "blue";
+        ctx.lineWidth = 5;
+        T = Date.now();
+        a = pathLength( dijkstra( ctx, g, r, t ) );
+        output += "<br><p style='color:blue'>Dijkstra length: " + parseInt( a ) + " time: " + ( Date.now() - T ) + " ms</p>";
+
+
+        ctx.strokeStyle = "#ffc800";
+        ctx.lineWidth = 2;
+        T = Date.now();
+        b = pathLength( astar(ctx, g, r, t ) );
+        output += "<p style='color:#ffc800'>A* length:" + parseInt( b ) + " time: " + ( Date.now() - T ) + " ms</p>";
+
+
+        ctx.strokeStyle = "rgba(255,0,0,.5)";
+        ctx.lineWidth = 3;
+        T = Date.now();
+        c = pathLength( flawed( ctx, g, r, t ) );
+        output += "<p style='color:red'>Flawed Dijkstra length:" + parseInt( c ) + " time: " +( Date.now() - T ) + " ms</p>";
+
+
+        output += "<br> --- shortest --- ";
+
+        var result = Math.min( a, Math.min( b, c ) );
+        if( a == result ) output += "<p style='color:blue'>shortest : Dijkstra</p>";
+        if( b == result ) output += "<p style='color:#ffc800'>shortest : A* </p>";
+        if( c == result ) output += "<p style='color:red'>shortest : Flawed Dijkstra</p>";
+
+        log.innerHTML= output;
+    }
+
+    //compute path length
+    function dist(a,b){
+        var dx =( a.x - b.x );
+        var dy =( a.y - b.y );
+        return Math.sqrt( dx*dx + dy*dy );
+    }
+    function pathLength( p )
+    {
+        var sum = 0;
+        p.forEach( function( a,i ){
+
+            if( i< p.length- 1 )
+            {
+                var b = p[i+1];
+                sum += dist( a,b );
+            }
+        });
+        return sum;
+    }
+
+    function getClosest( p, g )
+    {
+        var min, dist, minDist = Math.pow( 2, 53 );
+        g.vertices.forEach(function(v)
+        {
+            var dx = v.x - p.x;
+            var dy = v.y - p.y;
+            dist = ( dx*dx + dy*dy );
+            if( dist < minDist ){
+                minDist = dist;
+                min = v;
+            }
+        });
+        return min;
+    }
+
+    reset();
+
+</script>
+</body>
+</html>

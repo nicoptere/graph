@@ -1,6 +1,6 @@
 var Edge = function(){
 
-    function Edge( v0, v1, data ){
+    function Edge( v0, v1, directed ){
 
         this.v0 = v0;
         this.v1 = v1;
@@ -31,8 +31,10 @@ var Edge = function(){
     }
 
     function flip(){
-
-        return new Edge(this.v1, this.v0);
+        var v = this.v1;
+        this.v1 = this.v0;
+        this.v0 = v;
+        return this;
     }
 
     function other( other ){

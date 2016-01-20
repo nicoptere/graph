@@ -114,10 +114,210 @@ var utils = function(exports){
 
     }({});
 
+    //http://www.briangrinstead.com/blog/astar-search-algorithm-in-javascript
+    exports.astar = function( exports ){
+
+
+        exports.dist = function(a,b){
+            var dx =( a.x - b.x );
+            var dy =( a.y - b.y );
+            return Math.sqrt( dx*dx + dy*dy );
+        };
+
+        exports.search = function(graph, start, end, metric ) {
+
+            exports.metric = metric || exports.dist;
+
+            graph.vertices.forEach( function( v ){
+                v.f = 0;
+                v.g = 0;
+                v.h = 0;
+                v.parent = null;
+            });
+
+            var visited = [];
+            var unvisited   = [];
+            unvisited.push( start );
+
+            while(unvisited.length > 0) {
+
+                // Grab the lowest f(x) to process next
+                var lowInd = 0;
+                for( var i = 0; i<unvisited.length; i++) {
+                    if( unvisited[i].f < unvisited[lowInd].f ){
+                        lowInd = i;
+                    }
+                }
+
+                var currentNode = unvisited[lowInd];
+
+                // End case -- result has been found, return the traced path
+                if(currentNode == end ) {
+                    var curr = currentNode;
+                    var ret = [];
+                    while(curr.parent) {
+                        ret.push(curr);
+                        curr = curr.parent;
+                    }
+                    ret.reverse();
+                    ret.unshift( start );
+                    return ret;
+                }
+
+                // Normal case -- move currentNode from open to closed, process each of its neighbors
+                unvisited.splice(currentNode,1);
+                visited.push(currentNode);
+
+                var neighbors = currentNode.neighbours;
+                for( i = 0; i < neighbors.length; i++ ) {
+
+                    var neighbor = neighbors[i];
+                    if( visited.indexOf( neighbor ) != -1 ) {
+                        // not a valid node to process, skip to next neighbor
+                        continue;
+                    }
+
+                    // g score is the shortest distance from start to current node, we need to check if
+                    //	 the path we have arrived at this neighbor is the shortest one we have seen yet
+                    var gScore = currentNode.g + exports.metric( currentNode, neighbor ); // 1 is the distance from a node to it's neighbor
+                    var gScoreIsBest = false;
+
+                    if( unvisited.indexOf(neighbor) == -1 ) {
+                        // This the the first time we have arrived at this node, it must be the best
+                        // Also, we need to take the h (heuristic) score since we haven't done so yet
+                        neighbor.h = exports.metric( neighbor, end );
+                        unvisited.push(neighbor);
+                        gScoreIsBest = true;
+                    }
+                    else if(gScore < neighbor.g) {
+                        // We have already seen the node, but last time it had a worse g (distance from start)
+                        gScoreIsBest = true;
+                    }
+
+                    if(gScoreIsBest) {
+                        // Found an optimal (so far) path to this node.	 Store info on how we got here and
+                        //	just how good it really is...
+                        neighbor.parent = currentNode;
+                        neighbor.g = gScore;
+                        neighbor.f = neighbor.g + neighbor.h;
+                    }
+                }
+            }
+            return [];
+        };
+        return exports;
+    }({});
+
+
     /**
      computes the Dijkstra shortest distance on a graph
      */
-    exports.dijkstra = function( exports ){
+    exports.dijkstra = function( exports ) {
+
+        exports.edgeLength2d = function( a, b ){
+            var dx = ( a.x - b.x );
+            var dy = ( a.y - b.y );
+            return Math.sqrt( dx*dx + dy*dy );
+        };
+        exports.edgeLength3d = function( a, b ){
+            var dx = ( a.x - b.x );
+            var dy = ( a.y - b.y );
+            return Math.sqrt( dx*dx + dy*dy );
+        };
+
+        //buildis adjacency list
+        function init( graph, root, metric) {
+
+            metric = metric || exports.edgeLength2d;
+
+            var dist = new Float32Array(graph.vertices.length);
+            var adjacent = [];
+            var cost = [];
+            var prev = [];
+            var queue = [];
+
+            //inits a list
+            graph.vertices.forEach(function(v, i){
+
+                v.prev = null;
+
+                //initializes the distance to root at 0 ( ensures that root is the closest node to itself )
+                dist[ i ] = v == root ? 0 : Number.POSITIVE_INFINITY;
+
+                //stores the adjacency and the edges costs
+                var adj = new Int16Array(v.neighbours.length);
+                var cos = new Float32Array(v.neighbours.length);
+
+                v.neighbours.forEach( function(n, j)
+                {
+                    adj[ j ] = graph.vertices.indexOf( n );
+                    cos[ j ] = metric( v, n );
+                } );
+                adjacent.push( adj );
+                cost.push( cos );
+
+                queue.push( i );
+
+            });
+
+            var current, i, id, vertex, alt, min;
+            while( queue.length > 0 ){
+
+                //select the closest vertex
+                min = Number.POSITIVE_INFINITY;
+                for( i = 0; i < queue.length; i++ ){
+                    id = queue[i];
+                    if ( dist[ id ] < min) {
+                        min = dist[ id ];
+                        current = id;
+                    }
+                }
+
+                //removes current node from the queue
+                queue.splice( queue.indexOf( current ), 1 );
+
+                //for all neighbours of current, update distance to target node
+                for( i = 0; i < adjacent[ current ].length; i++ ){
+
+                    vertex = adjacent[current][i];
+
+                    alt = dist[ current ] + cost[ current ][ i ];
+
+                    if (alt < dist[ vertex ] ) {
+
+                        dist[ vertex ] = alt;
+                        prev[ vertex ] = current;
+                    }
+                }
+            }
+            prev.forEach(function(id, i){
+                graph.vertices[ i ].prev = graph.vertices[ id ];
+            });
+        }
+
+        //computes and returns shortest path from the root to the target vertices
+        function getShortestPath( target ){
+            var nodes = [];
+            var tg = target;
+
+            //target doesn't belong to the graph
+            if( tg == null )return nodes;
+            //otherwise list all nodes from the target to the root node
+            while( tg.prev != null ){
+                nodes.unshift( tg );
+                tg = tg.prev;
+            }
+            nodes.unshift( tg );
+            return nodes;
+        }
+
+        exports.init = init;
+        exports.getShortestPath = getShortestPath;
+        return exports;
+
+    }({});
+
+    exports.flawedDijkstra = function( exports ){
 
         //buildis adjacency list
         function init( graph, root, metric ){
@@ -126,6 +326,8 @@ var utils = function(exports){
             graph.edges.forEach(function (edge) {
 
                 var d = metric( edge );
+
+                //this is the flaw...
                 if( edge.v0.cost == null )edge.v0.cost = 0;
                 if( edge.v1.cost == null )edge.v1.cost = 0;
                 edge.v0.cost = Math.max( edge.v0.cost, d );
@@ -133,8 +335,8 @@ var utils = function(exports){
 
                 edge.v0.dist = Number.POSITIVE_INFINITY;
                 edge.v1.dist = Number.POSITIVE_INFINITY;
-                edge.v0.prev = null;
-                edge.v1.prev = null;
+                edge.v0.previous = null;
+                edge.v1.previous = null;
             });
 
             //initializes the distance to root at 0 ( ensures that root is the closest node to itself )
@@ -166,12 +368,10 @@ var utils = function(exports){
                     if (alt < vertex.dist){
 
                         vertex.dist = alt;
-                        vertex.prev = current;
+                        vertex.previous = current;
                     }
                 });
             }
-            console.timeEnd("dijkstra");
-
         }
 
         //computes and returns shortest path from the root to the target vertices
@@ -184,10 +384,10 @@ var utils = function(exports){
             if( tg == null )return nodes;
 
             //otherwise list all nodes from the target to the root node
-            while( tg.prev != null ){
+            while( tg.previous != null ){
 
                 nodes.unshift( tg );
-                tg = tg.prev;
+                tg = tg.previous;
             }
             nodes.unshift( tg );
             return nodes;
@@ -409,7 +609,7 @@ var utils = function(exports){
     exports.decimateEdges = function( graph, ratio ){
 
         for( var i = graph.edges.length - 1; i > 0 ; i-- ){
-            if( Math.random()<ratio ){
+            if( PRNG.random()<ratio ){
                 graph.removeEdgeAt(  i, false );
             }
         }
