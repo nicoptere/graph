@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+    <meta charset="UTF-8">
+    <title>sparse matrix</title>
+    <style>
+        head, body{
+            width:100%;
+            height:100%;
+            overflow: hidden;
+            top:0;
+            left:0;
+            margin:0;
+            padding:0;
+        }
+        select{
+            position: absolute;
+            top:10px;
+            left:10px;
+        }
+        #current{
+            position: absolute;
+            top:30px;
+            left:10px;
+        }
+    </style>
+</head>
+<body>
+
+<script src="vendor/hammer.min.js"></script>
+<script src="vendor/matrix3d/gl-matrix-manifest.js"></script>
+<script src="vendor/matrix3d/gl-matrix/common.js"></script>
+<script src="vendor/matrix3d/gl-matrix/mat4.js"></script>
+<script src="vendor/matrix3d/gl-matrix/vec3.js"></script>
+<script src="graph/Vertex.js"></script>
+<script src="graph/Edge.js"></script>
+<script src="graph/Graph.js"></script>
+<script src="graph/utils.js"></script>
+
+<canvas id="canvas"></canvas>
+<select id="presets">
+    <option value='[-3,-2,2]2'>3-prism graph</option>
+    <option value='[3,-3]4'>Cubical graph</option>
+    <option value='[-5,3,-4,4,-3]2'>5-prism graph</option>
+    <option value='[-3,3]6'>6-prism graph</option>
+    <option value='[-2,-2,2,2]2'>3-matchstick graph</option>
+    <option value='[-4]8'>4-Möbius ladder</option>
+    <option value='[-5]10'>5-Möbius ladder</option>
+    <option value='[-20]40'>20-Möbius ladder</option>
+    <option value='[5,-5]8'>Mobius-Kantor graph</option>
+    <option value='[5,-5]6'>Franklin graph</option>
+    <option value='[-5,-2,-4,2,5,-2,2,5,-2,-5,4,2]'>Frucht graph</option>
+    <option value='[-5,2,4,-2,-5,4,-4,5,2,-4,-2,5]'>generalized Petersen graph (6,2)</option>
+    <option value='[-7,-5,4,-6,-5,4,-4,-7,4,-4,5,6,-4,5]'>generalized Petersen graph (7,2)</option>
+    <option value='[5,-5]7'>Heawood graph</option>
+    <option value='[2,-2]2'>Tetrahedral graph</option>
+    <option value='[2,6,-2]4'>Truncated tetrahedral graph</option>
+    <option value='[3,-7,7,-3]6' selected>Truncated octahedral graph</option>
+    <option value='[10,7,4,-4,-7,10,-4,7,-7,4]2'>Dodecahedral graph</option>
+    <option value='[30,-2,2,21,-2,2,12,-2,2,-12,-2,2,-21,-2,2,30,-2,2,-12,-2,2,21,-2,2,-21,-2,2,12,-2,2]2'>Truncated dodecahedral graph</option>
+    <option value='[10]50'>ring</option>
+</select>
+<div id="current">blabla</div>
+
+
+<script src="lcf/LCF.js"></script>
+<script src="lcf.js"></script>
+</body>
+</html>

@@ -87,10 +87,10 @@ var vec = vec3.create();
 var id = 0, root, target, mst_path, path;
 var mouse = {x:0, y:0};
 function update(){
-    requestAnimationFrame(update);
+    //requestAnimationFrame(update);
 
     mat4.identity(mat);
-    mat4.rotate(mat, mat,  -mouse.x * Math.PI / 180, Y );
+    mat4.rotate(mat, mat, -.5* Math.PI / 180, Y );
 
     mesh.vertices.forEach( function(v, i){
         vec[0] = v.x;
@@ -243,9 +243,10 @@ function onDown(e){
 
         target = getClosest( e.center, mesh );
         if( root == target ) return;
-        utils.dijkstra.init( graph, root, utils.length3d );
+        utils.dijkstra.init( graph, root, utils.edgeLength2d );
         mst_path = utils.dijkstra.getShortestPath(target);
     }
+    update()
     id++;
 };
 var ham = new Hammer( ctx.canvas );

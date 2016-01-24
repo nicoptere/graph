@@ -289,7 +289,7 @@ function onDown(e){
 
         target = getClosest( mouse, graph );
         if( target == root )return;
-        utils.dijkstra.init( graph, root, utils.length2d );
+        utils.dijkstra.init( graph, root, utils.edgeLength2d );
         path = utils.dijkstra.getShortestPath(target);
 
 

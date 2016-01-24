@@ -317,6 +317,9 @@ var utils = function(exports){
 
     }({});
 
+    /**
+     * do not use, left it for "learning purpose"
+     */
     exports.flawedDijkstra = function( exports ){
 
         //buildis adjacency list
@@ -398,6 +401,61 @@ var utils = function(exports){
         return exports;
 
     }({});
+
+    /**
+     * builds a cubic graph that contain a Hamiltonian cycle after it's LCF notation
+     * https://en.wikipedia.org/wiki/LCF_notation
+     * http://mathworld.wolfram.com/LCFNotation.html
+     */
+    exports.LCF = function(exports){
+
+        exports.build = function( code  ) {
+            //parse the expression
+
+            //gets the operations
+            var operations = code.match(/(\[.*\])/);
+            var cycle = operations[1].substr( 1, operations[1].length - 1).split( ',').map( function(v){ return parseInt( v );});
+
+            //gets the vertices count
+            var count;
+            var c = code.match( /]([0-9]+)/ );
+            if( c == null ){
+                count = cycle.length;
+            }else {
+                count = parseInt( c[1] ) * cycle.length;
+            }
+
+            //builds the vertices
+            var vertices = [];
+            for( var i = 0; i < count; i++ ){
+                var v = new Vertex( { x:Math.random() - .5,y:Math.random() - .5,z:Math.random() - .5 });
+                vertices.push( v );
+            }
+
+            //build the inital chain
+            var edges = [];
+            for( i = 0; i < count; i++ ){
+                var e = new Edge( vertices[i], vertices[(i+1)%vertices.length] );
+                edges.push( e );
+            }
+
+            //applies the rule
+            var ruleId = 0;
+            for( i = 0; i < count; i++ ){
+
+                var id = ( i + cycle[ ruleId % cycle.length ] ) % vertices.length;
+                if( id < 0 )id += vertices.length;
+
+                edges.push( new Edge( vertices[i], vertices[id] ) );
+                ruleId++;
+            }
+
+            return new Graph( vertices, edges );
+
+        };
+        return exports;
+    }({});
+
 
     /**
      * performs a Delaunay triangulation on a set of 2D vertices [x,y]
@@ -552,6 +610,11 @@ var utils = function(exports){
         return exports;
     }({});
 
+    /**
+     * performs a delaunay triangulation of a vertices set
+     * @param graph
+     * @returns {*}
+     */
     exports.triangulate = function( graph, deleteEdges ){
 
         if( graph.vertices.length < 2 )throw new Error( "utils.triangulate: not enough vertices to build graph." );
@@ -574,6 +637,11 @@ var utils = function(exports){
         return graph;
     };
 
+    /**
+     * performs a triangulation and traingulates the triangles' centers
+     * @param graph
+     * @returns {*}
+     */
     exports.triangulateCenters = function( graph ){
 
         if( graph.vertices.length < 2 )throw new Error( "utils.triangulate: not enough vertices to build graph." );
@@ -597,6 +665,12 @@ var utils = function(exports){
 
     };
 
+    /**
+     * removes a given amount of vertices
+     * @param graph the graph to process
+     * @param percentage of vertices to remove [0-1]
+     * @returns {*}
+     */
     exports.decimateVertices = function( graph, ratio ){
 
         for( var i = graph.vertices.length - 1; i > 0 ; i-- ){
@@ -606,6 +680,12 @@ var utils = function(exports){
         }
         return graph;
     };
+    /**
+     * removes a given amount of vertices
+     * @param graph the graph to process
+     * @param percentage of edges to remove [0-1]
+     * @returns {*}
+     */
     exports.decimateEdges = function( graph, ratio ){
 
         for( var i = graph.edges.length - 1; i > 0 ; i-- ){
@@ -619,6 +699,14 @@ var utils = function(exports){
     function lerp ( t, a, b ){ return a + t * ( b - a ); }
     function norm( t, a, b ){return ( t - a ) / ( b - a );}
     function map(t, a0, b0, a1, b1) { return a1 + ( t - a0 ) / ( b0 - a0 ) * ( b1 - a1 ); }
+
+    /**
+     * rescales a graph from one coordinate system to another
+     * @param g the original grpah
+     * @param from the original bounds described as [ x0, y0, x1, y1 ]
+     * @param to the destination bounds described as [ x0, y0, x1, y1 ]
+     * @returns {*}
+     */
     exports.remap = function( g, from, to ){
 
         g.vertices.forEach( function( v ){
