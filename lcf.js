@@ -13,10 +13,10 @@ var des = document.getElementById('current');
 sel.onchange = function(e)
 {
     des.innerText = e.target.selectedOptions[0].text + " " + e.target.selectedOptions[0].value;
-    graph = LCF.build( e.target.selectedOptions[0].value, restLength );
+    graph = utils.LCF.build( e.target.selectedOptions[0].value, restLength );
 };
 
-graph = LCF.build( sel.selectedOptions[0].value, restLength );
+graph = utils.LCF.build( sel.selectedOptions[0].value, restLength );
 des.innerText = sel.selectedOptions[0].text + " " + sel.selectedOptions[0].value;
 
 var mouse = 0;
